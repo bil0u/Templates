@@ -1,0 +1,127 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: upopee <upopee@student.42.fr>              +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2016/11/28 11:42:57 by upopee            #+#    #+#              #
+#    Updated: 2018/02/21 05:20:49 by upopee           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+# -- VARIABLES --
+
+NAME =				libname.a
+CC =				gcc
+CFLAGS =			-Wall -Werror -Wextra
+
+SHELL =				/bin/bash
+AR =				ar -rc
+LINK =				ar -s
+MKDIR =				mkdir -p
+RMDIR =				rm -rf
+RM =				rm -f
+NORM =				norminette
+
+# -- PATHS NAMES --
+
+SRC_DIR =			sources
+INC_DIR =			includes
+OBJ_DIR =			.objects
+
+# -- FILES --
+
+FOO_DIR =			foo
+FOO_SRC =			$(patsubst %,$(FOO_DIR)/$(SRC_DIR)/%,$(FOO_C_FILES:=.c))
+FOO_INC =			$(patsubst %,$(FOO_DIR)/$(INC_DIR)/%,$(FOO_H_FILES:=.h))
+FOO_H_FILES =		foo \
+
+FOO_C_FILES =		foo \
+					foo2 \
+
+BAR_DIR =			bar
+BAR_SRC =			$(patsubst %,$(BAR_DIR)/$(SRC_DIR)/%,$(BAR_C_FILES:=.c))
+BAR_INC =			$(patsubst %,$(BAR_DIR)/$(INC_DIR)/%,$(BAR_H_FILES:=.h))
+BAR_H_FILES =		bar \
+
+BAR_C_FILES =		bar \
+					bar2 \
+
+
+VPATH =				$(FOO_DIR)/$(SRC_DIR):\
+					$(BAR_DIR)/$(SRC_DIR)\
+
+CPPFLAGS =			-I $(FOO_DIR)/$(INC_DIR) \
+					-I $(BAR_DIR)/$(INC_DIR) \
+
+SOURCES =	$(FOO_SRC) $(BAR_SRC)
+
+INCLUDES =	$(FOO_INC) $(BAR_INC)
+
+OBJECTS =	$(patsubst %,$(OBJ_DIR)/%,$(notdir $(SOURCES:.c=.o)))
+
+# -- IMPLICIT RULES  / LINKING --
+
+$(OBJ_DIR)/%.o: %.c $(INCLUDES)
+	@$(eval DONE=$(shell echo $$(($(INDEX)*20/$(NB)))))
+	@$(eval PERCENT=$(shell echo $$(($(INDEX)*100/$(NB)))))
+	@$(eval TO_DO=$(shell echo $$((20-$(INDEX)*20/$(NB) - 1))))
+	@$(eval COLOR=$(shell list=(160 196 202 208 215 221 226 227 190 154 118 82 46); index=$$(($(PERCENT) * $${#list[@]} / 100)); echo "$${list[$$index]}"))
+	@printf "\r> $(YELLOW)$(NAME)$(EOC) : Creating library...  %2d%% $(CNO)[`printf '*%.0s' {0..$(DONE)}`%*s]$(YELLOW)%*.*s$(EOC)$(ERASELN)" $(PERCENT) $(COLOR) $(TO_DO) "" $(DELTA) $(DELTA) "$(shell echo "$@" | sed 's/^.*\///')"
+	@$(CC) -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+	@$(eval INDEX=$(shell echo $$(($(INDEX)+1))))
+
+# -- RULES --
+
+all: $(NAME)
+
+$(NAME): $(OBJ_DIR) $(OBJECTS) Makefile
+	@$(AR) $(NAME) $(OBJECTS)
+	@$(LINK) $(NAME)
+	@printf "\r$(ERASELN)> $(YELLOW)$(NAME)$(EOC) : Library created !\t$(GREEN_B)✓$(EOC)\n"
+
+$(OBJ_DIR):
+	@$(MKDIR) $(OBJ_DIR)
+
+clean:
+	@if [ -e $(OBJ_DIR) ]; \
+	then \
+		$(RMDIR) $(OBJ_DIR); \
+		printf "> $(YELLOW)$(NAME)$(EOC) : Objects deleted\t$(RED_B)✗$(EOC)\n"; \
+	fi;
+
+fclean: clean
+	@if [ -e $(NAME) ]; \
+	then \
+		$(RM) $(NAME); \
+		printf "> $(YELLOW)$(NAME)$(EOC) : Library deleted\t$(RED_B)✗$(EOC)\n"; \
+	fi;
+
+re: fclean all
+
+norm:
+	@$(NORM) $(SRC_DIR)
+	@$(NORM) $(INC_DIR)
+
+.PHONY: all clean fclean re norm
+
+# -- DISPLAY --
+
+LEN_NAME =	`printf "%s" $(NAME) |wc -c`
+DELTA =		$$(echo "$$(tput cols)-52-$(LEN_NAME)"|bc)
+NB =		$(words $(SOURCES))
+INDEX=		0
+
+ERASELN =	\033[K
+CNO =		\033[38;5;%dm
+
+YELLOW =	\e[31;33m
+YELLOW_B =	\e[31;33;1m
+GREEN =		\e[32m
+GREEN_B =	\e[32;1m
+RED =		\e[31m
+RED_B =		\e[31;1m
+WHITE =		\e[37m
+WHITE_B =	\e[37;1m
+EOC =		\e[0m
